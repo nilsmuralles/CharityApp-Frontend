@@ -1,13 +1,28 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import ColumnChart from '@/components/ColumnChart.vue'
+import LineChart from '@/components/LineChart.vue'
+import PieChart from '@/components/PieChart.vue'
+import AreaChart from '@/components/AreaChart.vue'
 
-const series = ref([
+const series_bar = ref([
   {
-    name: 'Donaciones',
+    name: 'Donaciones 1',
     data: [500,205,230,580,458,954,120,456,453,245,654,123]
   }
 ])
+const series_line = ref([
+  {
+    name: 'Donaciones 1',
+    data: [500,205,230,580,458,954,120,456,453,245,654,123]
+  },
+  {
+    name: 'Donaciones 2',
+    data: [520,235,289,540,658,854,420,496,353,745,454,423]
+  }
+])
+const series_pie = ref([500,205,230])
+const labels_pie = ref(['FundaBien', 'Teleton', 'Juntos podemos'])
 const categories = ref(['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'])
 
 </script>
@@ -19,7 +34,10 @@ const categories = ref(['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 
     <div class="container">
       <h1>Prueba de graficas en Vue </h1>
       <div class="chart-grid">
-        <ColumnChart :series="series" :categories="categories" title="Donaciones por Mes"  :height="300" :width="500" />
+        <ColumnChart :series="series_bar" :categories="categories" title="Donaciones por Mes"  :height="300" :width="500" />
+        <LineChart :series="series_line" :categories="categories" title="Donaciones por Mes"  :height="300" :width="500" />
+        <PieChart :series="series_pie" :labels="labels_pie" title="Fundaciones con mas donaciones"  :height="300" :width="500" />
+        <AreaChart :series="series_line" :categories="categories" title="Donaciones por Mes"  :height="300" :width="500" />
       </div>
     </div>
   </main>
