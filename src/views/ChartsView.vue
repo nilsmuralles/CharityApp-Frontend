@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import ColumnChart from '@/components/ColumnChart.vue'
-import LineChart from '@/components/LineChart.vue'
-import PieChart from '@/components/PieChart.vue'
-import AreaChart from '@/components/AreaChart.vue'
+import { ref } from 'vue'
+import ColumnChart from '@/components/charts/ColumnChart.vue'
+import LineChart from '@/components/charts/LineChart.vue'
+import PieChart from '@/components/charts/PieChart.vue'
+import AreaChart from '@/components/charts/AreaChart.vue'
+import AmountFilter from '@/components/filters/AmountFilter.vue'
 
 const series_bar = ref([
   {
@@ -30,7 +31,6 @@ const categories = ref(['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 
 
 <template>
   <main>
-    
     <div class="container">
       <h1>Prueba de graficas en Vue </h1>
       <div class="chart-grid">
