@@ -4,7 +4,6 @@ import ColumnChart from '@/components/charts/ColumnChart.vue'
 import LineChart from '@/components/charts/LineChart.vue'
 import PieChart from '@/components/charts/PieChart.vue'
 import AreaChart from '@/components/charts/AreaChart.vue'
-import AmountFilter from '@/components/filters/AmountFilter.vue'
 
 const series_bar = ref([
   {
