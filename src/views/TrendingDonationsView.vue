@@ -1,79 +1,119 @@
 <script setup>
 import FilterPanel from '@/components/filters/FilterPanel.vue';
 import ColumnChart from '@/components/charts/ColumnChart.vue';
-import PieChart from '@/components/charts/PieChart.vue'
-import { ref, onMounted } from 'vue'
+import PieChart from '@/components/charts/PieChart.vue';
 import LineChart from '@/components/charts/LineChart.vue';
+import { ref, onMounted } from 'vue';
 
 const chartData = ref({
-    rawData: {},
-    series_donations: [],
-    series_pay_method: [],
-    categories_line: [],
-    categories_column: []
-});
+    rawData: [],
+    seriesByMethod: [],
+    seriesByMonth: [],
+    categories: []
+})
 
 const stats = ref({
     totalDonations: 0,
-    topCampaign: { name: '', amount: 0 },
-    campaignPercentages: [],
-});
+    averagePerMonth: 0,
+    topMonth: { month: '', total: 0 },
+    topMethod: { method: '', total: 0 },
+    methodPercentages: []
+})
 
 const getData = async () => {
     try {
-        const response = await fetch(`http://localhost:8080/api/trending-donations`, {
+        const response = await fetch('http://localhost:8080/api/trending-donations', {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json',
             },
         })
 
-        if (!response.ok) {
-            throw new Error('Hubo un problema al obtener las donaciones en tendencia')
-        }
+        if (!response.ok) throw new Error('Error al obtener las tendencias de donaciones')
+
         const { data } = await response.json()
-        chartData.value = {
-            rawData: data,
-            series_donations: [{
-                name: 'Donaciones',
-                data: data.map(item => item.total_donations)
-            }],
-            series_pay_method: [{
-                name: 'Métodos de pago',
-                data: data.map(item => item.pay_method)
-            }],
-            categories_line: data.map(item => item.month),
-            categories_column: data.map(item => item.pay_method)
-        };
-
-        // const total = data.reduce((sum, campaign) => sum + campaign.monetary_total, 0);
-
-        // const topCampaign = data.reduce((max, campaign) => 
-        //   campaign.monetary_total > max.amount ? 
-        //   { name: campaign.campaign, amount: campaign.monetary_total } : max, 
-        //   { name: '', amount: 0 }
-        // );
-
-        // const percentages = data.map(campaign => ({
-        //   name: campaign.campaign,
-        //   percentage: ((campaign.monetary_total / total) * 100).toFixed(2),
-        // }));
-
-        // stats.value = {
-        //   totalDonations: total,
-        //   topCampaign,
-        //   campaignPercentages: percentages,
-        // };
-
-    } catch (e) {
-        console.log(e)
-        alert(e.message || 'Ocurrió un error al obtener la data')
+        chartData.value.rawData = data
+        processDonationData(data)
+    } catch (error) {
+        console.error(error)
+        alert(error.message || 'Error al cargar los datos')
     }
 }
 
-onMounted(() => {
-    getData();
-});
+const processDonationData = (data) => {
+    const total = data.reduce((sum, item) => sum + item.total_donations, 0)
+    const uniqueMonths = [...new Set(data.map(item => item.month))].sort()
+    const methods = [...new Set(data.map(item => item.pay_method))]
+
+    const donationsByMonth = {}
+    data.forEach(item => {
+        if (!donationsByMonth[item.month]) {
+            donationsByMonth[item.month] = {
+                total: 0,
+                donors: 0,
+                methods: {}
+            }
+        }
+        donationsByMonth[item.month].total += item.total_donations
+        donationsByMonth[item.month].donors += item.unique_donors
+        donationsByMonth[item.month].methods[item.pay_method] =
+            (donationsByMonth[item.month].methods[item.pay_method] || 0) + item.total_donations
+    })
+
+    const donationsByMethod = {}
+    data.forEach(item => {
+        if (!donationsByMethod[item.pay_method]) {
+            donationsByMethod[item.pay_method] = 0
+        }
+        donationsByMethod[item.pay_method] += item.total_donations
+    })
+
+    const lineSeries = [{
+        name: 'Donaciones por mes',
+        data: uniqueMonths.map(month => donationsByMonth[month].total)
+    }]
+
+    const columnSeries = methods.map(method => ({
+        name: method,
+        data: uniqueMonths.map(month => {
+            return donationsByMonth[month].methods[method] || 0
+        })
+    }))
+
+    const methodPercentages = Object.keys(donationsByMethod).map(method => ({
+        name: method,
+        percentage: ((donationsByMethod[method] / total) * 100),
+        total: donationsByMethod[method]
+    }))
+
+    const topMonth = Object.entries(donationsByMonth).reduce((max, [month, data]) =>
+        data.total > max.total ? { month, total: data.total } : max,
+        { month: '', total: 0 }
+    )
+
+    const topMethod = Object.entries(donationsByMethod).reduce((max, [method, total]) =>
+        total > max.total ? { method, total } : max,
+        { method: '', total: 0 }
+    )
+
+    chartData.value = {
+        rawData: data,
+        seriesByMethod: columnSeries,
+        seriesByMonth: lineSeries,
+        categories: uniqueMonths
+    }
+
+    stats.value = {
+        totalDonations: total,
+        averagePerMonth: total / uniqueMonths.length,
+        topMonth,
+        topMethod,
+        methodPercentages,
+        uniqueDonors: data.reduce((sum, item) => sum + item.unique_donors, 0)
+    }
+}
+
+onMounted(() => {getData()})
 </script>
 
 <template>
@@ -82,42 +122,53 @@ onMounted(() => {
             <FilterPanel />
         </aside>
         <section class="content">
-            <h1>Donaciones en tendencia</h1>
-            <section class="charts">
-                <!-- <div class="report">
-            <h2>Resumen</h2>
-            <div>Campaña con mas donaciones: {{ stats.topCampaign.name }} </div>
-            <div>Monto obtenido por la campaña: {{ stats.topCampaign.amount }}</div>
-            <div>Monto total obtenido: {{ stats.totalDonations }} </div>
-            <div>Aporte de la campaña: {{ ((stats.topCampaign.amount / stats.totalDonations) * 100).toFixed(2) }}%</div>
-        </div> -->
-                <LineChart :categories="chartData.categories_line" :series="chartData.series_donations" title=""
-                    :width="600" :height="400" />
-                <ColumnChart :categories="chartData.categories_column" :series="chartData.series_pay_method" title=""
-                    :width="600" :height="400" />
-                <PieChart :labels="chartData.categories_column" :series="chartData.series_pay_method" title=""
-                    :width="600" :height="400" />
-            </section>
+            <h1>Tendencias de Donaciones</h1>
+
             <section class="data-table">
-                <h2>Detalle de Donaciones</h2>
+                <h2>Detalle por Mes y Método de Pago</h2>
                 <table>
                     <thead>
                         <tr>
                             <th>Mes</th>
-                            <th>Donaciones totales</th>
-                            <th>Donadores unicos</th>
-                            <th>Método de pago</th>
+                            <th>Método de Pago</th>
+                            <th>Total Donado</th>
+                            <th>Donantes Únicos</th>
+                            <th>% del Método</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr v-for="(item, index) in chartData.rawData" :key="index">
-                            <td>{{ new Date(chartData.rawData[index].month).toLocaleDateString() }}</td>
-                            <td>${{ chartData.rawData[index].total_donations.toLocaleString() }}</td>
-                            <td>{{ chartData.rawData[index].unique_donors }}</td>
-                            <td>{{ chartData.rawData[index].pay_method }}</td>
+                            <td>{{ item.month }}</td>
+                            <td>{{ item.pay_method }}</td>
+                            <td>${{ item.total_donations.toLocaleString() }}</td>
+                            <td>{{ item.unique_donors }}</td>
+                            <td>{{ ((item.total_donations / stats.totalDonations) * 100).toFixed(2) }}%</td>
                         </tr>
                     </tbody>
                 </table>
+            </section>
+
+            <section class="charts">
+                <div class="report">
+                    <h2>Resumen General</h2>
+                    <div>Total donado: <strong>${{ stats.totalDonations.toLocaleString() }}</strong></div>
+                    <div>Promedio mensual: <strong>${{ stats.averagePerMonth.toFixed(2) }}</strong></div>
+                    <div>Donantes únicos: <strong>{{ stats.uniqueDonors }}</strong></div>
+                    <div>Mes con más donaciones: <strong>{{ stats.topMonth.month }} (${{ stats.topMonth.total
+                            }})</strong></div>
+                    <div>Método más usado: <strong>{{ stats.topMethod.method }} ({{ ((stats.topMethod.total /
+                        stats.totalDonations) * 100).toFixed(2) }}%)</strong></div>
+                </div>
+
+                <LineChart :categories="chartData.categories" :series="chartData.seriesByMonth"
+                    title="Tendencia de Donaciones por Mes" :width="600" :height="400" />
+
+                <ColumnChart :categories="chartData.categories" :series="chartData.seriesByMethod"
+                    title="Donaciones por Método de Pago" :width="600" :height="400" />
+
+                <PieChart :labels="stats.methodPercentages.map(item => `${item.name} (${item.percentage.toFixed(2)}%)`)"
+                    :series="stats.methodPercentages.map(item => item.total)" title="Distribución por Método de Pago"
+                    :width="600" :height="400" />
             </section>
         </section>
     </main>
@@ -125,79 +176,100 @@ onMounted(() => {
 
 <style scoped>
 .container {
-    box-sizing: content-box;
-    height: 100dvh;
-    width: 100%;
-    display: flex;
-    gap: 2rem;
-    justify-content: center;
-    overflow: hidden;
-}
-
-.filters {
-    margin-top: 4.5rem;
+  height: 100dvh;
+  width: 100%;
+  display: flex;
+  gap: 2rem;
+  justify-content: center;
+  overflow: hidden;
 }
 
 .content {
-    margin-top: 4.5rem;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
+  margin-top: 4.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.content h1{
+    flex: 1;
 }
 
 .charts {
-    display: flex;
-    width: 660px;
-    overflow-x: scroll;
+  flex: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 710px;
+  flex-direction: column;
+  overflow-y: scroll;
+}
+
+.filters {
+  height: inherit;
+  margin-top: 3.3rem;
+  background: #343a3f;
+}
+
+.charts strong {
+  font-weight: 500;
 }
 
 .report {
-    width: 600px;
-    height: 400px;
-    background: #343a3f;
-    border-radius: 1rem;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 1.2rem;
-    margin: 1rem;
+  width: 650px;
+  height: auto;
+  background: #343a3f;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.2rem;
+  margin: 1rem;
 }
 
-/* Tabla de datos */
+.report div:hover {
+  padding: 0.1rem;
+  border-radius: 5px;
+  background: #485057;
+  transform: scale(1.1);
+}
+
 .data-table {
-    background: var(--color-background);
-    border-radius: 8px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    overflow-x: auto;
+  flex: 6;
+  background: var(--color-background);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  margin: 2rem;
+  margin-top: 0.5rem;
+  overflow: auto;
 }
 
 table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 1rem;
-    overflow: hidden;
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  overflow: hidden;
 }
 
-th,
-td {
-    padding: 12px 15px;
-    text-align: left;
-    border-bottom: 1px solid #ddd;
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
 }
 
 th {
-    background-color: #343a3f;
-    color: white;
-    position: sticky;
-    top: 0;
+  background-color: #343a3f;
+  color: white;
+  position: sticky;
+  top: 0;
 }
 
 tr:hover {
-    background-color: #485057;
+  background-color: #485057;
 }
 </style>
