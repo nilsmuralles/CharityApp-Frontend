@@ -1,8 +1,16 @@
 <script setup>
   import { DatePicker, InputGroup, InputGroupAddon } from 'primevue';
   import 'primeicons/primeicons.css'
-</script>
+  import { ref } from 'vue';
 
+  const startDate = ref(null)
+  const endDate = ref(null)
+
+  defineExpose({
+    startDate,
+    endDate
+  })
+</script>
 <template>
   <main>
     <label for="startDate">Desde</label>
@@ -10,14 +18,14 @@
       <InputGroupAddon>
         <i class="pi pi-calendar"></i>
       </InputGroupAddon>
-      <DatePicker input-id="startDate"/>
+      <DatePicker input-id="startDate" v-model="startDate"/>
     </InputGroup>
     <label for="endDate">hasta</label>
     <InputGroup>
       <InputGroupAddon>
         <i class="pi pi-calendar"></i>
       </InputGroupAddon>
-      <DatePicker input-id="endDate"/>
+      <DatePicker input-id="endDate" v-model="endDate"/>
     </InputGroup>
   </main>
 </template>

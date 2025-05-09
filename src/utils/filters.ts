@@ -6,11 +6,20 @@ export interface CampaignDonations {
   total_donated_articles: number;
 }
 
+export function getMinAndMaxDate(campaigns: CampaignDonations[]) {
+  const dates = campaigns.map(c => new Date(c.end_date))
+  const minDate = new Date(Math.min(...dates.map(d => d.getTime())))
+  const maxDate = new Date(Math.max(...dates.map(d => d.getTime())))
+  return [minDate, maxDate]
+}
+
 export function filterByDateRange(campaigns: CampaignDonations[], start: Date, end: Date): CampaignDonations[] {
+  const startDate = new Date(start)
+  const endDate = new Date(end)
   return campaigns.filter(campaign => {
     const date = new Date(campaign.end_date)
-    const afterStart = start ? date >= start : true
-    const beforeEnd = end ? date >= end : true
+    const afterStart = startDate ? date >= startDate : true
+    const beforeEnd = endDate ? date <= endDate : true
     return afterStart && beforeEnd
   })
 }

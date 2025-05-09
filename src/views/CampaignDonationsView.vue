@@ -1,9 +1,15 @@
 <script setup>
-import FilterPanel from '@/components/filters/FilterPanel.vue';
+import { Button, Divider } from 'primevue';
+import 'primeicons/primeicons.css'
 import ColumnChart from '@/components/charts/ColumnChart.vue';
 import PieChart from '@/components/charts/PieChart.vue';
 import LineChart from '@/components/charts/LineChart.vue';
+import DateFilter from '@/components/filters/DateFilter.vue';
+import AmountFilter from '@/components/filters/AmountFilter.vue';
 import { ref, onMounted } from 'vue';
+import { filterByAmountRange, filterByDateRange, getMinAndMaxDate } from '@/utils/filters';
+
+const dateRangeValue = ref()
 
 const chartData = ref({
   rawData: [],
@@ -19,6 +25,22 @@ const stats = ref({
   campaignPercentages: [],
   top5Campaigns: []
 });
+
+const handleFilterClick = () => {
+  const campaings = chartData.value.rawData
+  
+  const start = dateRangeValue.value?.startDate
+  const end = dateRangeValue.value?.endDate
+  
+  const filteredCampaings = filterByDateRange(campaings, start, end)
+  updateData(filteredCampaings)
+}
+
+const handleClearClick = async () => {
+  await getData()
+  dateRangeValue.value.startDate = getMinAndMaxDate(chartData.value.rawData)[0]
+  dateRangeValue.value.endDate = getMinAndMaxDate(chartData.value.rawData)[1]
+}
 
 const formatDate = (isoDate) => isoDate.split('T')[0];
 
@@ -81,42 +103,70 @@ const calculateStats = (data) => {
   return { totalDonations, topCampaign, campaignPercentages, top5Campaigns: top5Summary };
 };
 
+const initFilters = () => {
+  const campaings = chartData.value.rawData
+  const minDate = getMinAndMaxDate(campaings)[0]
+  const maxDate = getMinAndMaxDate(campaings)[1]
+  dateRangeValue.value.startDate = minDate
+  dateRangeValue.value.endDate = maxDate
+}
+
+const updateData = (data) => {
+  chartData.value.rawData = data;
+
+  const { dates, series } = calculateDonationsByDate(data);
+
+  chartData.value.series_monetary = [{
+    name: 'Donaciones Monetarias',
+    data: data.map(c => c.monetary_total)
+  }];
+  chartData.value.series_dates = [
+    { name: 'Monetarias', data: series.monetary },
+    { name: 'No Monetarias', data: series.nonMonetary },
+    { name: 'Total', data: series.total }
+  ];
+  chartData.value.categories_column = data.map(c => c.campaign);
+  chartData.value.categories_line = dates;
+
+  stats.value = calculateStats(data);
+}
+
 const getData = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/campaign-donations');
     if (!response.ok) throw new Error('Error al obtener las donaciones');
 
     const { data } = await response.json();
-    chartData.value.rawData = data;
-
-    const { dates, series } = calculateDonationsByDate(data);
-
-    chartData.value.series_monetary = [{
-      name: 'Donaciones Monetarias',
-      data: data.map(c => c.monetary_total)
-    }];
-    chartData.value.series_dates = [
-      { name: 'Monetarias', data: series.monetary },
-      { name: 'No Monetarias', data: series.nonMonetary },
-      { name: 'Total', data: series.total }
-    ];
-    chartData.value.categories_column = data.map(c => c.campaign);
-    chartData.value.categories_line = dates;
-
-    stats.value = calculateStats(data);
+    updateData(data)
   } catch (e) {
     console.error(e);
     alert(e.message || 'Ocurrió un error al obtener los datos');
   }
 };
 
-onMounted(getData);
+onMounted(async () => {
+  await getData()
+  initFilters()
+});
 </script>
 
 <template>
   <main class="container">
     <aside class="filters">
-      <FilterPanel />
+      <Button label="Filter" class="btn-filter" icon="pi pi-filter" iconPos="right" @click="handleFilterClick"/>
+      <section class="filter-sction">
+        <div class="filter">
+          <label for="date-filter">Rango de fecha</label>
+          <Divider />
+          <DateFilter id="date-filter" ref="dateRangeValue"/>
+        </div>
+        <div class="filter">
+          <label for="money-filter">Rango de valor monetario</label>
+          <Divider />
+          <AmountFilter id="money-filter"/>
+        </div>
+      </section>
+      <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>
     </aside>
     <section class="content">
       <h1>Donaciones por campaña</h1>
