@@ -24,6 +24,13 @@ export function filterByDateRange(campaigns: CampaignDonations[], start: Date, e
   })
 }
 
+export function getMinAndMaxAmount(campaigns: CampaignDonations[]) {
+  const amounts = campaigns.map(c => c.monetary_total)
+  const minAmount = Math.min(...amounts)
+  const maxAmount = Math.max(...amounts)
+  return [minAmount, maxAmount]
+}
+
 export function filterByAmountRange(campaigns: CampaignDonations[], min: number, max: number): CampaignDonations[] {
   return campaigns.filter(campaign => {
     const aboveMin = min !== null ? campaign.monetary_total >= min : true

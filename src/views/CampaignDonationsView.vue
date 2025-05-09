@@ -7,9 +7,13 @@ import LineChart from '@/components/charts/LineChart.vue';
 import DateFilter from '@/components/filters/DateFilter.vue';
 import AmountFilter from '@/components/filters/AmountFilter.vue';
 import { ref, onMounted } from 'vue';
-import { filterByAmountRange, filterByDateRange, getMinAndMaxDate } from '@/utils/filters';
+import { filterByAmountRange, filterByDateRange, getMinAndMaxAmount, getMinAndMaxDate } from '@/utils/filters';
 
 const dateRangeValue = ref()
+
+const minAmount = ref()
+const maxAmount = ref()
+const amountRange = ref([])
 
 const chartData = ref({
   rawData: [],
@@ -25,22 +29,6 @@ const stats = ref({
   campaignPercentages: [],
   top5Campaigns: []
 });
-
-const handleFilterClick = () => {
-  const campaings = chartData.value.rawData
-  
-  const start = dateRangeValue.value?.startDate
-  const end = dateRangeValue.value?.endDate
-  
-  const filteredCampaings = filterByDateRange(campaings, start, end)
-  updateData(filteredCampaings)
-}
-
-const handleClearClick = async () => {
-  await getData()
-  dateRangeValue.value.startDate = getMinAndMaxDate(chartData.value.rawData)[0]
-  dateRangeValue.value.endDate = getMinAndMaxDate(chartData.value.rawData)[1]
-}
 
 const formatDate = (isoDate) => isoDate.split('T')[0];
 
@@ -103,14 +91,6 @@ const calculateStats = (data) => {
   return { totalDonations, topCampaign, campaignPercentages, top5Campaigns: top5Summary };
 };
 
-const initFilters = () => {
-  const campaings = chartData.value.rawData
-  const minDate = getMinAndMaxDate(campaings)[0]
-  const maxDate = getMinAndMaxDate(campaings)[1]
-  dateRangeValue.value.startDate = minDate
-  dateRangeValue.value.endDate = maxDate
-}
-
 const updateData = (data) => {
   chartData.value.rawData = data;
 
@@ -135,7 +115,6 @@ const getData = async () => {
   try {
     const response = await fetch('http://localhost:8080/api/campaign-donations');
     if (!response.ok) throw new Error('Error al obtener las donaciones');
-
     const { data } = await response.json();
     updateData(data)
   } catch (e) {
@@ -143,6 +122,32 @@ const getData = async () => {
     alert(e.message || 'Ocurrió un error al obtener los datos');
   }
 };
+
+const initFilters = () => {
+  const [minDate, maxDate] = getMinAndMaxDate(chartData.value.rawData)
+  const [min, max] = getMinAndMaxAmount(chartData.value.rawData)
+
+  minAmount.value = min
+  maxAmount.value = max
+  amountRange.value = [min, max]
+  dateRangeValue.value.startDate = minDate
+  dateRangeValue.value.endDate = maxDate
+}
+
+const handleFilterClick = () => {
+  const start = dateRangeValue.value?.startDate
+  const end = dateRangeValue.value?.endDate
+  const [min, max] = amountRange.value
+
+  const filteredByDate = filterByDateRange(chartData.value.rawData, start, end)
+  const filteredByAmount = filterByAmountRange(filteredByDate, min, max)
+  updateData(filteredByAmount)
+}
+
+const handleClearClick = async () => {
+  await getData()
+  initFilters()
+}
 
 onMounted(async () => {
   await getData()
@@ -163,7 +168,7 @@ onMounted(async () => {
         <div class="filter">
           <label for="money-filter">Rango de valor monetario</label>
           <Divider />
-          <AmountFilter id="money-filter"/>
+          <AmountFilter id="money-filter" v-model="amountRange" :min="minAmount" :max="maxAmount"/>
         </div>
       </section>
       <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>

@@ -1,26 +1,21 @@
 <script setup>
   import { Slider } from 'primevue';
-  import { ref } from 'vue';
+
+  const modelValue = defineModel({ type: Array });
+
   const props = defineProps({
-    min: {
-      type: Number,
-      default: 0
-    },
-    max: {
-      type: Number,
-      default: 100
-    }
-  })
-  const amountRange = ref([props.min, props.max])
+    min: { type: Number, default: 0 },
+    max: { type: Number, default: 1000 }
+  });
 </script>
 
 <template>
   <main>
-    <span>${{ amountRange[0] }}</span>
+    <span>${{ modelValue[0] }}</span>
     <div class="slider-container">
-      <Slider range v-model="amountRange" :min="props.min" :max="props.max"/>
+      <Slider range v-model="modelValue" :min="props.min" :max="props.max" />
     </div>
-    <span>${{ amountRange[1] }}</span>
+    <span>${{ modelValue[1] }}</span>
   </main>
 </template>
 
