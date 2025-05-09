@@ -38,3 +38,7 @@ export function filterByAmountRange(campaigns: CampaignDonations[], min: number,
     return aboveMin && belowMax
   })
 }
+
+export function filterAlphabetically(campaigns: CampaignDonations[]) {
+  return campaigns.sort((a, b) => a.campaign.localeCompare(b.campaign))
+}

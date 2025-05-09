@@ -7,7 +7,7 @@ import LineChart from '@/components/charts/LineChart.vue';
 import DateFilter from '@/components/filters/DateFilter.vue';
 import AmountFilter from '@/components/filters/AmountFilter.vue';
 import { ref, onMounted } from 'vue';
-import { filterByAmountRange, filterByDateRange, getMinAndMaxAmount, getMinAndMaxDate } from '@/utils/filters';
+import { filterAlphabetically, filterByAmountRange, filterByDateRange, getMinAndMaxAmount, getMinAndMaxDate } from '@/utils/filters';
 
 const dateRangeValue = ref()
 
@@ -144,6 +144,11 @@ const handleFilterClick = () => {
   updateData(filteredByAmount)
 }
 
+const handleSortAlphabetically = () => {
+  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData)
+  updateData(sortedAlphabetically)
+}
+
 const handleClearClick = async () => {
   await getData()
   initFilters()
@@ -169,6 +174,11 @@ onMounted(async () => {
           <label for="money-filter">Rango de valor monetario</label>
           <Divider />
           <AmountFilter id="money-filter" v-model="amountRange" :min="minAmount" :max="maxAmount"/>
+        </div>
+        <div class="filter">
+          <label for="alphabetical-order">Ordenar alfabéticamente</label>
+          <Divider />
+          <Button label="Ordenar" icon="pi pi-sort-alpha-down" iconPos="right" severity="secondary" raised @click="handleSortAlphabetically"/>
         </div>
       </section>
       <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>
