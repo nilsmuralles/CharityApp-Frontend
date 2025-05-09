@@ -151,7 +151,6 @@ onMounted(() => {
 <template>
   <main class="container">
     <aside class="filters">
-      <FilterPanel />
     </aside>
     <section class="content">
       <h1>Participación de Voluntarios</h1>

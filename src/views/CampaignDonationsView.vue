@@ -124,8 +124,8 @@ const getData = async () => {
 };
 
 const initFilters = () => {
-  const [minDate, maxDate] = getMinAndMaxDate(chartData.value.rawData)
-  const [min, max] = getMinAndMaxAmount(chartData.value.rawData)
+  const [minDate, maxDate] = getMinAndMaxDate(chartData.value.rawData, 'end_date')
+  const [min, max] = getMinAndMaxAmount(chartData.value.rawData, 'monetary_total')
 
   minAmount.value = min
   maxAmount.value = max
@@ -139,8 +139,8 @@ const handleFilterClick = () => {
   const end = dateRangeValue.value?.endDate
   const [min, max] = amountRange.value
 
-  const filteredByDate = filterByDateRange(chartData.value.rawData, start, end)
-  const filteredByAmount = filterByAmountRange(filteredByDate, min, max)
+  const filteredByDate = filterByDateRange(chartData.value.rawData, 'end_date', start, end)
+  const filteredByAmount = filterByAmountRange(filteredByDate, 'monetary_total', min, max)
   updateData(filteredByAmount)
 }
 

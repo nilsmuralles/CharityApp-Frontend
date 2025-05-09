@@ -1,9 +1,19 @@
 <script setup>
-import FilterPanel from '@/components/filters/FilterPanel.vue';
+import { Button, Divider } from 'primevue';
+import 'primeicons/primeicons.css'
 import ColumnChart from '@/components/charts/ColumnChart.vue';
 import PieChart from '@/components/charts/PieChart.vue';
 import LineChart from '@/components/charts/LineChart.vue';
+import DateFilter from '@/components/filters/DateFilter.vue';
+import AmountFilter from '@/components/filters/AmountFilter.vue';
+import { getMinAndMaxAmount, filterByAmountRange, getMinAndMaxDate, filterByDateRange } from '@/utils/filters';
 import { ref, onMounted } from 'vue';
+
+const dateRangeValue = ref()
+
+const minAmount = ref()
+const maxAmount = ref()
+const amountRange = ref([])
 
 const chartData = ref({
     rawData: [],
@@ -28,9 +38,7 @@ const getData = async () => {
                 'Content-Type': 'application/json',
             },
         })
-
         if (!response.ok) throw new Error('Error al obtener las tendencias de donaciones')
-
         const { data } = await response.json()
         chartData.value.rawData = data
         processDonationData(data)
@@ -113,65 +121,106 @@ const processDonationData = (data) => {
     }
 }
 
-onMounted(() => {getData()})
+const initFilters = () => {
+  const [minDate, maxDate] = getMinAndMaxDate(chartData.value.rawData, 'month')
+  const [min, max] = getMinAndMaxAmount(chartData.value.rawData, 'total_donations')
+
+  minAmount.value = min
+  maxAmount.value = max
+  amountRange.value = [min, max]
+  dateRangeValue.value.startDate = minDate
+  dateRangeValue.value.endDate = maxDate
+}
+
+const handleFilterClick = () => {
+  const start = dateRangeValue.value?.startDate
+  const end = dateRangeValue.value?.endDate
+  const [min, max] = amountRange.value
+
+  const filteredByDate = filterByDateRange(chartData.value.rawData, 'month', start, end)
+  const filteredByAmount = filterByAmountRange(filteredByDate, 'total_donations', min, max)
+  processDonationData(filteredByAmount)
+}
+
+const handleClearClick = async () => {
+  await getData()
+  initFilters()
+}
+
+onMounted(async () => {
+  await getData()
+  initFilters()
+})
 </script>
 
 <template>
-    <main class="container">
-        <aside class="filters">
-            <FilterPanel />
-        </aside>
-        <section class="content">
-            <h1>Tendencias de Donaciones</h1>
-
-            <section class="data-table">
-                <h2>Detalle por Mes y Método de Pago</h2>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Mes</th>
-                            <th>Método de Pago</th>
-                            <th>Total Donado</th>
-                            <th>Donantes Únicos</th>
-                            <th>% del Método</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(item, index) in chartData.rawData" :key="index">
-                            <td>{{ item.month }}</td>
-                            <td>{{ item.pay_method }}</td>
-                            <td>${{ item.total_donations.toLocaleString() }}</td>
-                            <td>{{ item.unique_donors }}</td>
-                            <td>{{ ((item.total_donations / stats.totalDonations) * 100).toFixed(2) }}%</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
-
-            <section class="charts">
-                <div class="report">
-                    <h2>Resumen General</h2>
-                    <div>Total donado: <strong>${{ stats.totalDonations.toLocaleString() }}</strong></div>
-                    <div>Promedio mensual: <strong>${{ stats.averagePerMonth.toFixed(2) }}</strong></div>
-                    <div>Donantes únicos: <strong>{{ stats.uniqueDonors }}</strong></div>
-                    <div>Mes con más donaciones: <strong>{{ stats.topMonth.month }} (${{ stats.topMonth.total
-                            }})</strong></div>
-                    <div>Método más usado: <strong>{{ stats.topMethod.method }} ({{ ((stats.topMethod.total /
-                        stats.totalDonations) * 100).toFixed(2) }}%)</strong></div>
-                </div>
-
-                <LineChart :categories="chartData.categories" :series="chartData.seriesByMonth"
-                    title="Tendencia de Donaciones por Mes" :width="600" :height="400" />
-
-                <ColumnChart :categories="chartData.categories" :series="chartData.seriesByMethod"
-                    title="Donaciones por Método de Pago" :width="600" :height="400" />
-
-                <PieChart :labels="stats.methodPercentages.map(item => `${item.name} (${item.percentage.toFixed(2)}%)`)"
-                    :series="stats.methodPercentages.map(item => item.total)" title="Distribución por Método de Pago"
-                    :width="600" :height="400" />
-            </section>
+  <main class="container">
+      <aside class="filters">
+        <Button label="Filter" class="btn-filter" icon="pi pi-filter" iconPos="right" @click="handleFilterClick"/>
+        <section class="filter-sction">
+          <div class="filter">
+            <label for="date-filter">Rango de fecha</label>
+            <Divider />
+            <DateFilter id="date-filter" ref="dateRangeValue"/>
+          </div>
+          <div class="filter">
+            <label for="money-filter">Rango de valor monetario</label>
+            <Divider />
+            <AmountFilter id="money-filter" v-model="amountRange" :min="minAmount" :max="maxAmount"/>
+          </div>
         </section>
-    </main>
+        <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>
+      </aside>
+      <section class="content">
+          <h1>Tendencias de Donaciones</h1>
+          <section class="data-table">
+              <h2>Detalle por Mes y Método de Pago</h2>
+              <table>
+                  <thead>
+                      <tr>
+                          <th>Mes</th>
+                          <th>Método de Pago</th>
+                          <th>Total Donado</th>
+                          <th>Donantes Únicos</th>
+                          <th>% del Método</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      <tr v-for="(item, index) in chartData.rawData" :key="index">
+                          <td>{{ item.month }}</td>
+                          <td>{{ item.pay_method }}</td>
+                          <td>${{ item.total_donations.toLocaleString() }}</td>
+                          <td>{{ item.unique_donors }}</td>
+                          <td>{{ ((item.total_donations / stats.totalDonations) * 100).toFixed(2) }}%</td>
+                      </tr>
+                  </tbody>
+              </table>
+          </section>
+
+          <section class="charts">
+              <div class="report">
+                  <h2>Resumen General</h2>
+                  <div>Total donado: <strong>${{ stats.totalDonations.toLocaleString() }}</strong></div>
+                  <div>Promedio mensual: <strong>${{ stats.averagePerMonth.toFixed(2) }}</strong></div>
+                  <div>Donantes únicos: <strong>{{ stats.uniqueDonors }}</strong></div>
+                  <div>Mes con más donaciones: <strong>{{ stats.topMonth.month }} (${{ stats.topMonth.total
+                          }})</strong></div>
+                  <div>Método más usado: <strong>{{ stats.topMethod.method }} ({{ ((stats.topMethod.total /
+                      stats.totalDonations) * 100).toFixed(2) }}%)</strong></div>
+              </div>
+
+              <LineChart :categories="chartData.categories" :series="chartData.seriesByMonth"
+                  title="Tendencia de Donaciones por Mes" :width="600" :height="400" />
+
+              <ColumnChart :categories="chartData.categories" :series="chartData.seriesByMethod"
+                  title="Donaciones por Método de Pago" :width="600" :height="400" />
+
+              <PieChart :labels="stats.methodPercentages.map(item => `${item.name} (${item.percentage.toFixed(2)}%)`)"
+                  :series="stats.methodPercentages.map(item => item.total)" title="Distribución por Método de Pago"
+                  :width="600" :height="400" />
+          </section>
+      </section>
+  </main>
 </template>
 
 <style scoped>
