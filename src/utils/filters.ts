@@ -44,3 +44,7 @@ export function filterByType(campaigns: any[], field: string, type: string) {
     campaign[field].toLowerCase() === type.toLowerCase()
   );
 }
+
+export function sortAmount(campaigns: any[], field: string) {
+  return [...campaigns].sort((a, b) => a[field] - b[field]);
+}

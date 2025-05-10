@@ -5,7 +5,9 @@ import ColumnChart from '@/components/charts/ColumnChart.vue'
 import AmountFilter from '@/components/filters/AmountFilter.vue';
 import PieChart from '@/components/charts/PieChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
-import { filterAlphabetically, filterByAmountRange, getMinAndMaxAmount } from '@/utils/filters'
+import { filterAlphabetically, filterByAmountRange, getMinAndMaxAmount, sortAmount } from '@/utils/filters'
+
+const displayedData = ref([])
 
 const minTotalHours = ref()
 const maxTotalHours = ref()
@@ -43,6 +45,8 @@ const getData = async () => {
     chartData.value.rawData = data
 
     processVolunteerData(data)
+    displayedData.value = stats.value.campaignStats
+    console.log(displayedData.value)
   } catch (error) {
     console.error(error)
     alert(error.message || 'Error al cargar los datos')
@@ -150,7 +154,7 @@ const processVolunteerData = (data) => {
 }
 
 const initFilters = () => {
-  const [minTH, maxTH] = getMinAndMaxAmount(chartData.value.rawData, 'total_hours')
+  const [minTH, maxTH] = getMinAndMaxAmount(displayedData.value, 'hours')
 
   minTotalHours.value = minTH
   maxTotalHours.value = maxTH
@@ -158,18 +162,23 @@ const initFilters = () => {
 }
 
 const handleFilterClick = () => {
-  const [min, max] = amountRange.value
-  const filteredByAmount = filterByAmountRange(filteredByDate, 'total_hours', min, max)
+  const [min, max] = totalHoursRange.value
+  const filteredByAmount = filterByAmountRange(displayedData.value, 'hours', min, max)
   processVolunteerData(filteredByAmount)
 }
 
+const handleSortByParticipations = () => {
+  const sortedAlphabetically = sortAmount(displayedData.value, 'participations')
+  processVolunteerData(sortedAlphabetically)
+}
+
 const handleSortAlphabetically = () => {
-  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData, false)
+  const sortedAlphabetically = filterAlphabetically(displayedData.value, false)
   processVolunteerData(sortedAlphabetically)
 }
 
 const handleSortAlphabeticallyInverse = () => {
-  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData, true)
+  const sortedAlphabetically = filterAlphabetically(displayedData.value, true)
   updateData(sortedAlphabetically)
 }
 
@@ -190,9 +199,14 @@ onMounted(async () => {
     <Button label="Filter" class="btn-filter" icon="pi pi-filter" iconPos="right" @click="handleFilterClick"/>
     <section class="filter-sction">
       <div class="filter">
-        <label for="money-filter">Rango de horas totales</label>
+        <label for="order">Ordenar por participantes</label>
         <Divider />
-        <AmountFilter id="money-filter" v-model="totalHoursRange" :min="minTotalHours" :max="maxTotalHours"/>
+        <Button label="Ordenar" icon="pi pi-sort-numeric-down" iconPos="right" severity="secondary" raised @click="handleSortByParticipations"/>
+      </div>
+      <div class="filter">
+        <label for="hours-filter">Rango de horas totales</label>
+        <Divider />
+        <AmountFilter id="hours-filter" v-model="totalHoursRange" :min="minTotalHours" :max="maxTotalHours"/>
       </div>
       <div class="filter">
         <label for="alphabetical-order">Ordenar alfabéticamente (A-Z)</label>

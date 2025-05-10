@@ -6,7 +6,7 @@ import PieChart from '@/components/charts/PieChart.vue';
 import LineChart from '@/components/charts/LineChart.vue';
 import DateFilter from '@/components/filters/DateFilter.vue';
 import AmountFilter from '@/components/filters/AmountFilter.vue';
-import { getMinAndMaxAmount, filterByAmountRange, getMinAndMaxDate, filterByDateRange, filterByType } from '@/utils/filters';
+import { getMinAndMaxAmount, filterByAmountRange, getMinAndMaxDate, filterByDateRange, filterByType, sortAmount } from '@/utils/filters';
 import { ref, onMounted } from 'vue';
 
 const dateRangeValue = ref()
@@ -143,8 +143,12 @@ const handleFilterClick = () => {
   const filteredByDate = filterByDateRange(chartData.value.rawData, 'month', start, end)
   const filteredByAmount = filterByAmountRange(filteredByDate, 'total_donations', min, max)
   const filteredByPayMethod = filterByType(filteredByAmount, 'pay_method', paymentMethod.value)
-  console.log(filteredByPayMethod)
   processDonationData(filteredByPayMethod)
+}
+
+const handleSortAmount = () => {
+  const sorted = sortAmount(chartData.value.rawData, 'total_donations')
+  processDonationData(sorted)
 }
 
 const handleClearClick = async () => {
@@ -179,6 +183,11 @@ onMounted(async () => {
             <div class="select-wrapper">
               <SelectButton v-model="paymentMethod" :options="options" />
             </div>
+          </div>
+          <div class="filter">
+            <label for="monetary-order">Ordenar por total donado</label>
+            <Divider />
+            <Button label="Ordenar" icon="pi pi-sort-numeric-down" iconPos="right" severity="secondary" raised @click="handleSortAmount"/>
           </div>
         </section>
         <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>

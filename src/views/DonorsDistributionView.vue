@@ -1,8 +1,13 @@
 <script setup>
+import { Button, Divider, SelectButton } from 'primevue';
 import { ref, onMounted } from 'vue'
 import ColumnChart from '@/components/charts/ColumnChart.vue'
 import PieChart from '@/components/charts/PieChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
+import { filterByType, sortAmount } from '@/utils/filters'
+
+const category = ref()
+const options = ['Empresa', 'Individual']
 
 const chartData = ref({
     rawData: [],
@@ -81,13 +86,65 @@ const transformDonorData = (data) => {
 
 }
 
-onMounted(getData)
+const handleSortAmount = () => {
+  const sorted = sortAmount(chartData.value.rawData, 'total_amount')
+  transformDonorData(sorted);
+}
+
+const handleSortDonnors = () => {
+  const sorted = sortAmount(chartData.value.rawData, 'monetary_donors')
+  transformDonorData(sorted);
+}
+
+const handleSortDonnorsNotMonetary = () => {
+  const sorted = sortAmount(chartData.value.rawData, 'no_monetary_donors')
+  transformDonorData(sorted);
+}
+
+const handleFilterClick = () => {
+  const filteredByType = filterByType(chartData.value.rawData, 'category', category.value)
+  transformDonorData(filteredByType)
+}
+
+const handleClearClick = async () => {
+  await getData()
+}
+
+onMounted(() => {
+  getData()
+})
 </script>
 
 
 <template>
     <main class="container">
         <aside class="filters">
+          <Button label="Filter" class="btn-filter" icon="pi pi-filter" iconPos="right" @click="handleFilterClick"/>
+          <section class="filter-sction">
+            <div class="filter">
+              <label for="monetary-order">Ordenar por total donado</label>
+              <Divider />
+              <Button label="Ordenar" icon="pi pi-sort-numeric-down" iconPos="right" severity="secondary" raised @click="handleSortAmount"/>
+            </div>
+            <div class="filter">
+              <label for="type-filter">Categoría</label>
+              <Divider />
+              <div class="select-wrapper">
+                <SelectButton v-model="category" :options="options" />
+              </div>
+            </div>
+            <div class="filter">
+              <label for="donnor-order">Ordenar por total de donadores</label>
+              <Divider />
+              <Button label="Ordenar" icon="pi pi-sort-numeric-down" iconPos="right" severity="secondary" raised @click="handleSortDonnors"/>
+            </div>
+            <div class="filter">
+              <label for="donnor-order">Ordenar por total de donadores (no monetarios)</label>
+              <Divider />
+              <Button label="Ordenar" icon="pi pi-sort-numeric-down" iconPos="right" severity="secondary" raised @click="handleSortDonnorsNotMonetary"/>
+            </div>
+          </section>
+          <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>
         </aside>
         <section class="content">
             <h1>Distribución de Donantes</h1>
