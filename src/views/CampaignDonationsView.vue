@@ -173,7 +173,7 @@ onMounted(async () => {
         <div class="filter">
           <label for="money-filter">Rango de valor monetario</label>
           <Divider />
-          <AmountFilter id="money-filter" v-model="amountRange" :min="minAmount" :max="maxAmount"/>
+          <AmountFilter id="money-filter" :unity="'$'" v-model="amountRange" :min="minAmount" :max="maxAmount"/>
         </div>
         <div class="filter">
           <label for="alphabetical-order">Ordenar alfabéticamente</label>

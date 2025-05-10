@@ -1,6 +1,5 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import FilterPanel from '@/components/filters/FilterPanel.vue'
 import ColumnChart from '@/components/charts/ColumnChart.vue'
 import PieChart from '@/components/charts/PieChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
@@ -89,7 +88,6 @@ onMounted(getData)
 <template>
     <main class="container">
         <aside class="filters">
-            <FilterPanel />
         </aside>
         <section class="content">
             <h1>Distribución de Donantes</h1>

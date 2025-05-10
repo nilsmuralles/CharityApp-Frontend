@@ -16,8 +16,8 @@ export function filterByDateRange(campaigns: any[], dateFieldName: string, start
   })
 }
 
-export function getMinAndMaxAmount(campaigns: any[], monetaryTotal: string) {
-  const amounts = campaigns.map(c => c[monetaryTotal])
+export function getMinAndMaxAmount(campaigns: any[], amountName: string) {
+  const amounts = campaigns.map(c => c[amountName])
   const minAmount = Math.min(...amounts)
   const maxAmount = Math.max(...amounts)
   return [minAmount, maxAmount]

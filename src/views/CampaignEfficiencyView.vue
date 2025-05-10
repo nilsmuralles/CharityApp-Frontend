@@ -124,7 +124,6 @@ onMounted(() => {
 <template>
   <main class="container">
     <aside class="filters">
-      <FilterPanel />
     </aside>
     <section class="content">
       <h1>Rendimiento de Campañas</h1>

@@ -1,9 +1,15 @@
 <script setup>
+import { Button, Divider } from 'primevue';
 import { ref, onMounted } from 'vue'
-import FilterPanel from '@/components/filters/FilterPanel.vue';
 import ColumnChart from '@/components/charts/ColumnChart.vue'
+import AmountFilter from '@/components/filters/AmountFilter.vue';
 import PieChart from '@/components/charts/PieChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
+import { filterAlphabetically, filterByAmountRange, getMinAndMaxAmount } from '@/utils/filters'
+
+const minTotalHours = ref()
+const maxTotalHours = ref()
+const totalHoursRange = ref([])
 
 const chartData = ref({
   rawData: [],
@@ -143,14 +149,53 @@ const processVolunteerData = (data) => {
   }
 }
 
-onMounted(() => {
-  getData()
+const initFilters = () => {
+  const [minTH, maxTH] = getMinAndMaxAmount(chartData.value.rawData, 'total_hours')
+
+  minTotalHours.value = minTH
+  maxTotalHours.value = maxTH
+  totalHoursRange.value = [minTH, maxTH]
+}
+
+const handleFilterClick = () => {
+  const [min, max] = amountRange.value
+  const filteredByAmount = filterByAmountRange(filteredByDate, 'total_hours', min, max)
+  processVolunteerData(filteredByAmount)
+}
+
+const handleSortAlphabetically = () => {
+  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData)
+  processVolunteerData(sortedAlphabetically)
+}
+
+const handleClearClick = async () => {
+  await getData()
+  initFilters()
+}
+
+onMounted(async () => {
+  await getData()
+  initFilters()
 })
 </script>
 
 <template>
   <main class="container">
     <aside class="filters">
+    <Button label="Filter" class="btn-filter" icon="pi pi-filter" iconPos="right" @click="handleFilterClick"/>
+    <section class="filter-sction">
+      <div class="filter">
+        <label for="money-filter">Rango de horas totales</label>
+        <Divider />
+        <AmountFilter id="money-filter" v-model="totalHoursRange" :min="minTotalHours" :max="maxTotalHours"/>
+      </div>
+      <div class="filter">
+        <label for="alphabetical-order">Ordenar alfabéticamente</label>
+        <Divider />
+        <Button label="Ordenar" icon="pi pi-sort-alpha-down" iconPos="right" severity="secondary" raised @click="handleSortAlphabetically"/>
+      </div>
+    </section>
+    <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>
     </aside>
     <section class="content">
       <h1>Participación de Voluntarios</h1>
