@@ -111,3 +111,8 @@ label {
   border-top: 1px solid lightgray;
 }
 
+.select-wrapper {
+  display: flex;
+  justify-content: center;
+}
+

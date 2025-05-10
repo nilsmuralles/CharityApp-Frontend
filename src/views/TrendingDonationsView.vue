@@ -1,12 +1,12 @@
 <script setup>
-import { Button, Divider } from 'primevue';
+import { Button, Divider, SelectButton } from 'primevue';
 import 'primeicons/primeicons.css'
 import ColumnChart from '@/components/charts/ColumnChart.vue';
 import PieChart from '@/components/charts/PieChart.vue';
 import LineChart from '@/components/charts/LineChart.vue';
 import DateFilter from '@/components/filters/DateFilter.vue';
 import AmountFilter from '@/components/filters/AmountFilter.vue';
-import { getMinAndMaxAmount, filterByAmountRange, getMinAndMaxDate, filterByDateRange } from '@/utils/filters';
+import { getMinAndMaxAmount, filterByAmountRange, getMinAndMaxDate, filterByDateRange, filterByType } from '@/utils/filters';
 import { ref, onMounted } from 'vue';
 
 const dateRangeValue = ref()
@@ -14,6 +14,9 @@ const dateRangeValue = ref()
 const minAmount = ref()
 const maxAmount = ref()
 const amountRange = ref([])
+
+const paymentMethod = ref()
+const options = ['Transferencia', 'Tarjeta', 'Efectivo']
 
 const chartData = ref({
     rawData: [],
@@ -139,7 +142,9 @@ const handleFilterClick = () => {
 
   const filteredByDate = filterByDateRange(chartData.value.rawData, 'month', start, end)
   const filteredByAmount = filterByAmountRange(filteredByDate, 'total_donations', min, max)
-  processDonationData(filteredByAmount)
+  const filteredByPayMethod = filterByType(filteredByAmount, 'pay_method', paymentMethod.value)
+  console.log(filteredByPayMethod)
+  processDonationData(filteredByPayMethod)
 }
 
 const handleClearClick = async () => {
@@ -167,6 +172,13 @@ onMounted(async () => {
             <label for="money-filter">Rango de valor monetario</label>
             <Divider />
             <AmountFilter id="money-filter" :unity="'$'" v-model="amountRange" :min="minAmount" :max="maxAmount"/>
+          </div>
+          <div class="filter">
+            <label for="type-filter">Método de pago</label>
+            <Divider />
+            <div class="select-wrapper">
+              <SelectButton v-model="paymentMethod" :options="options" />
+            </div>
           </div>
         </section>
         <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>

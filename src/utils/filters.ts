@@ -38,3 +38,9 @@ export function filterAlphabetically(campaigns: any[], reverse: boolean) {
     return campaigns.sort((a, b) => a.campaign.localeCompare(b.campaign))
   }
 }
+
+export function filterByType(campaigns: any[], field: string, type: string) {
+  return campaigns.filter(campaign => 
+    campaign[field].toLowerCase() === type.toLowerCase()
+  );
+}
