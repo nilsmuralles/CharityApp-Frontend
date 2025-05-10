@@ -1,29 +1,22 @@
 # CharityApp-Frontend
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
+## Levantar el Frontend
+1. Clonar el repositorio
+```sh
+git clone https://github.com/nilsmuralles/CharityApp-Frontend.git
+```
+2. Dirigirse a la raiz del proyecto
+```sh
+cd CharityApp-Frontend
+```
+3. Instalar las dependencias
 ```sh
 npm install
 ```
-
-### Compile and Hot-Reload for Development
-
+4. Ejecutar el proyecto
 ```sh
 npm run dev
 ```
 
-### Type-Check, Compile and Minify for Production
-
-```sh
-npm run build
-```
-
-### Run Unit Tests with [Vitest](https://vitest.dev/)
-
-```sh
-npm run test:unit
-```
+## Correcto funcionamiento
+Para que el proyecto funcione correctamente primero se deben seguir los pasos descritos en el repositorio CharityApp-Backend: https://github.com/nilsmuralles/CharityApp-Backend.git
