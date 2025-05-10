@@ -164,8 +164,13 @@ const handleFilterClick = () => {
 }
 
 const handleSortAlphabetically = () => {
-  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData)
+  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData, false)
   processVolunteerData(sortedAlphabetically)
+}
+
+const handleSortAlphabeticallyInverse = () => {
+  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData, true)
+  updateData(sortedAlphabetically)
 }
 
 const handleClearClick = async () => {
@@ -190,9 +195,14 @@ onMounted(async () => {
         <AmountFilter id="money-filter" v-model="totalHoursRange" :min="minTotalHours" :max="maxTotalHours"/>
       </div>
       <div class="filter">
-        <label for="alphabetical-order">Ordenar alfabéticamente</label>
+        <label for="alphabetical-order">Ordenar alfabéticamente (A-Z)</label>
         <Divider />
         <Button label="Ordenar" icon="pi pi-sort-alpha-down" iconPos="right" severity="secondary" raised @click="handleSortAlphabetically"/>
+      </div>
+      <div class="filter">
+        <label for="alphabetical-order-reverse">Ordenar alfabéticamente (Z-A)</label>
+        <Divider />
+        <Button label="Ordenar" icon="pi pi-sort-alpha-down-alt" iconPos="right" severity="secondary" raised @click="handleSortAlphabeticallyInverse"/>
       </div>
     </section>
     <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>

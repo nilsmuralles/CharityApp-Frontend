@@ -31,6 +31,10 @@ export function filterByAmountRange(campaigns: any[], amountName: string, min: n
   })
 }
 
-export function filterAlphabetically(campaigns: any[]) {
-  return campaigns.sort((a, b) => a.campaign.localeCompare(b.campaign))
+export function filterAlphabetically(campaigns: any[], reverse: boolean) {
+  if (reverse) {
+    return campaigns.sort((a, b) => b.campaign.localeCompare(a.campaign))
+  } else {
+    return campaigns.sort((a, b) => a.campaign.localeCompare(b.campaign))
+  }
 }

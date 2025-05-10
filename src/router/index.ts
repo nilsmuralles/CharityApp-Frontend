@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import ChartsView from '@/views/ChartsView.vue'
 import CampaignDonationsView from '@/views/CampaignDonationsView.vue'
 import TrendingDonationsView from '@/views/TrendingDonationsView.vue'
 import VolunteerParticipationsView from '@/views/VolunteerParticipationsView.vue'
@@ -11,8 +10,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'Charts',
-      component: ChartsView,
+      redirect: '/campaign-donations'
     },
     {
       path: '/campaign-donations',

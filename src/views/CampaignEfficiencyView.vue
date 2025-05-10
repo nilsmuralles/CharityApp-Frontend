@@ -1,9 +1,19 @@
 <script setup>
+import { Button, Divider } from 'primevue';
+import 'primeicons/primeicons.css'
 import { ref, onMounted } from 'vue'
-import FilterPanel from '@/components/filters/FilterPanel.vue';
 import ColumnChart from '@/components/charts/ColumnChart.vue'
 import PieChart from '@/components/charts/PieChart.vue'
 import BarChart from '@/components/charts/BarChart.vue'
+import DateFilter from '@/components/filters/DateFilter.vue';
+import AmountFilter from '@/components/filters/AmountFilter.vue';
+import { getMinAndMaxDate, filterByDateRange, getMinAndMaxAmount, filterByAmountRange, filterAlphabetically } from '@/utils/filters'
+
+const dateRangeValue = ref()
+
+const minDonations = ref()
+const maxDonations = ref()
+const donationsRange = ref([])
 
 const chartData = ref({
   rawData: [],
@@ -116,14 +126,75 @@ const formatDate = (date) => {
   return date.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
-onMounted(() => {
-  getData()
+const initFilters = () => {
+  const [minDate, maxDate] = getMinAndMaxDate(chartData.value.rawData, 'end_date')
+  const [min, max] = getMinAndMaxAmount(chartData.value.rawData, 'total_donations')
+  
+  minDonations.value = min
+  maxDonations.value = max
+  donationsRange.value = [min, max]
+  dateRangeValue.value.startDate = minDate
+  dateRangeValue.value.endDate = maxDate
+}
+
+const handleFilterClick = () => {
+  const start = dateRangeValue.value?.startDate
+  const end = dateRangeValue.value?.endDate
+  const [min, max] = donationsRange.value
+
+  const filteredByDate = filterByDateRange(chartData.value.rawData, 'end_date', start, end)
+  const filteredByAmount = filterByAmountRange(filteredByDate, 'total_donations', min, max)
+  processCampaignData(filteredByAmount)
+}
+
+const handleSortAlphabetically = () => {
+  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData, false)
+  processCampaignData(sortedAlphabetically)
+}
+
+const handleSortAlphabeticallyInverse = () => {
+  const sortedAlphabetically = filterAlphabetically(chartData.value.rawData, true)
+  processCampaignData(sortedAlphabetically)
+}
+
+const handleClearClick = (async () => {
+  await getData()
+  initFilters()
+})
+
+onMounted(async () => {
+  await getData()
+  initFilters()
 })
 </script>
 
 <template>
   <main class="container">
     <aside class="filters">
+    <Button label="Filter" class="btn-filter" icon="pi pi-filter" iconPos="right" @click="handleFilterClick"/>
+    <section class="filter-sction">
+      <div class="filter">
+        <label for="date-filter">Rango de fecha</label>
+        <Divider />
+        <DateFilter id="date-filter" ref="dateRangeValue"/>
+      </div>
+      <div class="filter">
+        <label for="money-filter">Rango de valor monetario</label>
+        <Divider />
+        <AmountFilter id="money-filter" :unity="'$'" v-model="donationsRange" :min="minDonations" :max="maxDonations"/>
+      </div>
+      <div class="filter">
+        <label for="alphabetical-order">Ordenar alfabéticamente (A-Z)</label>
+        <Divider />
+        <Button label="Ordenar" icon="pi pi-sort-alpha-down" iconPos="right" severity="secondary" raised @click="handleSortAlphabetically"/>
+      </div>
+      <div class="filter">
+        <label for="alphabetical-order-reverse">Ordenar alfabéticamente (Z-A)</label>
+        <Divider />
+        <Button label="Ordenar" icon="pi pi-sort-alpha-down-alt" iconPos="right" severity="secondary" raised @click="handleSortAlphabeticallyInverse"/>
+      </div>
+    </section>
+    <Button label="Clear" class="btn-clear" icon="pi pi-times" severity="danger" iconPos="right" @click="handleClearClick"/>
     </aside>
     <section class="content">
       <h1>Rendimiento de Campañas</h1>

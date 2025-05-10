@@ -1,7 +1,6 @@
 <script setup>
     
   const navItems = [
-    { title: 'Inicio', path: '/'},
     { title: 'Don. por campaña', path: '/campaign-donations' },
     { title: 'Don. en tendencia', path: '/trending-donations' },
     { title: 'Participacion', path: '/volunteer-participations'},
